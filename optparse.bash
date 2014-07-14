@@ -197,7 +197,7 @@ while getopts "$optparse_arguments_string" option; do
 done
 
 # Clean up after self
-rm $build_file
+[[ -z "$script" ]] && rm $build_file
 
 EOF
 
