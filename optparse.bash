@@ -77,7 +77,7 @@ function optparse.define(){
                         local list="$value"
                 elif [ "$key" = "file" ]; then
                         local file="$value"
-				elif [ "$key" = "required" ]; then
+                elif [ "$key" = "required" ]; then
                         local required="$value"
                 fi
         done
@@ -120,7 +120,7 @@ function optparse.define(){
         if [ "$required" == "true" ]; then
             required_short_options="${required_short_options} ${short}"
             required_long_options="${required_long_options} ${long}"
-	    fi
+        fi
         hash_options["${short}"]="${long}"
 }
 
