@@ -75,6 +75,8 @@ function optparse.define(){
                         local val="$value"
                 elif [ "$key" = "list" ]; then
                         local list="$value"
+                elif [ "$key" = "file" ]; then
+                        local file="$value"
 				elif [ "$key" = "required" ]; then
                         local required="$value"
                 fi
@@ -111,20 +113,34 @@ function optparse.define(){
         if [ "$list" != "" ]; then
                 optparse_process_completion="${optparse_process_completion}#NL#TB#TB${long})#NL#TB#TB#TB${variable}_list=\"$list\"#NL#TB#TB#TBCOMPREPLY=( \$(compgen -W \"\${${variable}_list}\" -- \${cur}) )#NL#TB#TB#TBreturn 0;;"
         fi
+        if [ "$file" == "true" ]; then
+                optparse_process_completion="${optparse_process_completion}#NL#TB#TB${long})#NL#TB#TB#TBcompopt -o default#NL#TB#TB#TBCOMPREPLY=()#NL#TB#TB#TBreturn 0;;"
+        fi
         # Take obligatory parameters
         if [ "$required" == "true" ]; then
             required_short_options="${required_short_options} ${short}"
             required_long_options="${required_long_options} ${long}"
 	    fi
-       hash_options["${short}"]="${long}"
+        hash_options["${short}"]="${long}"
 }
 
 # -----------------------------------------------------------------------------------------------------------------------------
 function optparse.build(){
-        local script=${1:?}
-        local build_file="$(mktemp -t "optparse-XXXXXX.tmp")"
-        local completion_dir="/etc/bash_completion.d/"
+        local script=$1
+        local completion_dir=$2
+        local build_file
+        local completion_dir
         local completion_file="${completion_dir}${script}"
+
+        if [[ -z "$script" ]]; then
+            build_file=="$(mktemp -t "optparse-XXXXXX.tmp")"
+        else
+            build_file="${script}_optparse"
+            if [[ -z "$completion_dir" ]]; then
+                completion_dir="/etc/bash_completion.d"
+            fi
+            completion_file="${completion_dir}/${script}_completion"
+        fi
 
         # Building getopts header here
 
@@ -206,6 +222,7 @@ mkdir -p $completion_dir
         cat << EOF > $completion_file
 _$script(){
         local cur prev options
+        compopt +o default
         COMPREPLY=()
         cur=\${COMP_WORDS[COMP_CWORD]}
         prev=\${COMP_WORDS[COMP_CWORD-1]}
@@ -240,6 +257,6 @@ EOF
         unset long_options
 
         # Return file name to parent
-        echo "$build_file"
+        [[ -z "$script" ]] && echo "$build_file" || true
 }
 # -----------------------------------------------------------------------------------------------------------------------------
