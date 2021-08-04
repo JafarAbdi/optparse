@@ -10,7 +10,10 @@ optparse.define short=c long=country desc="The event country" variable=country l
 optparse.define short=y long=year desc="The event year" variable=year required=true
 
 # Generate optparse and autocompletion scripts
-script_name="sample_event.sh"
-optparse.build $script_name
+source $(optparse.build)
 
-exit 0
+# Display event information
+if [[ "$say_hello" == "true" ]]; then
+    salute="Hello!!! "
+fi
+echo $salute "The $name event will be in $country in $year."

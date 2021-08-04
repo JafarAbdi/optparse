@@ -125,22 +125,52 @@ function optparse.define(){
 }
 
 # -----------------------------------------------------------------------------------------------------------------------------
-function optparse.build(){
+function optparse.build_completion(){
         local script=$1
         local completion_dir=$2
-        local build_file
-        local completion_dir
-        local completion_file="${completion_dir}${script}"
-
-        if [[ -z "$script" ]]; then
-            build_file=="$(mktemp -t "optparse-XXXXXX.tmp")"
-        else
-            build_file="${script}_optparse"
-            if [[ -z "$completion_dir" ]]; then
-                completion_dir="/etc/bash_completion.d"
-            fi
-            completion_file="${completion_dir}/${script}_completion"
+        local completion_file="${completion_dir}${script}_completion"
+        if [[ -z "script" ]]; then
+          echo "You have to specify the script argument"
+          echo "optparse.build_completion script completion_dir"
         fi
+        if [[ -z "completion_dir" ]]; then
+          echo "You have to specify the completion_dir argument"
+          echo "optparse.build_completion script completion_dir"
+        fi
+        # Create completion script
+        mkdir -p $completion_dir
+        cat << EOF > $completion_file
+_$script(){
+        local cur prev options
+        compopt +o default
+        COMPREPLY=()
+        cur=\${COMP_WORDS[COMP_CWORD]}
+        prev=\${COMP_WORDS[COMP_CWORD-1]}
+
+        # The basic options we'll complete.
+        options="${long_options}"
+
+        # Complete the arguments to some of the basic commands.
+        case \$prev in
+                $optparse_process_completion
+                *)
+        esac
+        COMPREPLY=(\$(compgen -W "\${options}" -- \${cur}))
+        return 0
+}
+complete -F _$script $script
+EOF
+
+        for i in "${!o[@]}"; do
+                sed -i "s/${i}/${o[$i]}/g" $completion_file
+        done
+}
+
+# -----------------------------------------------------------------------------------------------------------------------------
+function optparse.build(){
+        local build_file
+
+        build_file="$(mktemp -t "optparse-XXXXXX.tmp")"
 
         # Building getopts header here
 
@@ -188,6 +218,18 @@ $optparse_defaults
 required_short_options="$( sed 's/^ //' <<< "$required_short_options")"
 required_long_options="$( sed 's/^ //' <<< "$required_long_options")"
 
+# Take options enter by user
+tr ' ' '\n' <<< "\$params" | grep "\-" | sed -e 's/=.*//g' | sort | tr -d '"' > /tmp/options_entered
+
+# Compare options defined as required with options enter by user to obtain missing options
+missing_options="\$( tr ' ' '\n' <<< "\$required_short_options" | sort | comm -32 - /tmp/options_entered | tr '\n' ' ' )"
+
+if [ -n "\$missing_options" ]; then
+   echo "Missing required option: \$missing_options"
+   usage;
+   exit 1;
+fi
+
 # Create an associative array with with short options as keys and long options as values
 declare -A hash_options=(\
 $(for option in ${short_options}
@@ -213,39 +255,14 @@ while getopts "$optparse_arguments_string" option; do
 done
 
 # Clean up after self
-[[ -z "$script" ]] && rm $build_file
+# [[ -z "$script" ]] && rm $build_file
 
-EOF
-
-# Create completion script
-mkdir -p $completion_dir
-        cat << EOF > $completion_file
-_$script(){
-        local cur prev options
-        compopt +o default
-        COMPREPLY=()
-        cur=\${COMP_WORDS[COMP_CWORD]}
-        prev=\${COMP_WORDS[COMP_CWORD-1]}
-
-        # The basic options we'll complete.
-        options="${long_options}"
-
-        # Complete the arguments to some of the basic commands.
-        case \$prev in
-                $optparse_process_completion
-                *)
-        esac
-        COMPREPLY=(\$(compgen -W "\${options}" -- \${cur}))
-        return 0
-}
-complete -F _$script $script
 EOF
 
         local -A o=( ['#NL']='\n' ['#TB']='\t' )
 
         for i in "${!o[@]}"; do
                 sed -i "s/${i}/${o[$i]}/g" $build_file
-                sed -i "s/${i}/${o[$i]}/g" $completion_file
         done
 
         # Unset global variables
@@ -257,6 +274,6 @@ EOF
         unset long_options
 
         # Return file name to parent
-        [[ -z "$script" ]] && echo "$build_file" || true
+        echo "$build_file"
 }
 # -----------------------------------------------------------------------------------------------------------------------------

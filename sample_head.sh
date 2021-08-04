@@ -36,4 +36,3 @@ cat $file | head -n $lines > $output
 if [ "$verbose_mode" = "true" ]; then echo "Done."; fi
 
 exit 0
-	
