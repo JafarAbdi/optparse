@@ -128,17 +128,20 @@ function optparse.define(){
 function optparse.build_completion(){
         local script=$1
         local completion_dir=$2
-        local completion_file="${completion_dir}${script}_completion"
-        if [[ -z "script" ]]; then
+        local completion_file="${completion_dir}/${script}_completion"
+        if [[ -z "$script" ]]; then
           echo "You have to specify the script argument"
           echo "optparse.build_completion script completion_dir"
         fi
-        if [[ -z "completion_dir" ]]; then
+        if [[ -z "$completion_dir" ]]; then
           echo "You have to specify the completion_dir argument"
           echo "optparse.build_completion script completion_dir"
         fi
         # Create completion script
         mkdir -p $completion_dir
+        local description_file="$(mktemp -t "optparse-XXXXXX.tmp")"
+        head -n $(grep -n "# BASH_START #" $script | cut -d':' -f1) $script > $description_file
+        source $description_file
         cat << EOF > $completion_file
 _$script(){
         local cur prev options
@@ -160,7 +163,7 @@ _$script(){
 }
 complete -F _$script $script
 EOF
-
+        local -A o=( ['#NL']='\n' ['#TB']='\t' )
         for i in "${!o[@]}"; do
                 sed -i "s/${i}/${o[$i]}/g" $completion_file
         done

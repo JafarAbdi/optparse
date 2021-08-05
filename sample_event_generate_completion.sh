@@ -9,8 +9,10 @@ optparse.define short=s long=say-hello desc="Say Hello" variable=say_hello value
 optparse.define short=c long=country desc="The event country" variable=country list="USA Canada Japan Brasil England"
 optparse.define short=y long=year desc="The event year" variable=year required=true
 
-# Generate optparse and autocompletion scripts
-source $(optparse.build)
+# BASH_START #
+
+# Generate optparse
+source $( optparse.build )
 
 # Display event information
 if [[ "$say_hello" == "true" ]]; then
