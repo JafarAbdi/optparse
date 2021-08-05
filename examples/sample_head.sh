@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Source the optparse.bash file ---------------------------------------------------
-source optparse.bash
+source $OPT_PARSE_DIR/optparse.bash
 # Define options
 optparse.define short=f long=file desc="The file to process" variable=file
 optparse.define short=o long=output desc="The output file" variable=output default=head_output.txt

@@ -1,28 +1,21 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-# Source the sample_event_optparse file ---------------------------------------------------
-source sample_event.sh_optparse
+# Source the optparse.bash file ---------------------------------------------------
+source $OPT_PARSE_DIR/optparse.bash
 
-# Take options enter by user
-tr ' ' '\n' <<< "$@" | grep "\-" | sed -e 's/=.*//g' | sort > /tmp/options_entered
+# Define options
+optparse.define short=n long=name desc="The event name" variable=name
+optparse.define short=s long=say-hello desc="Say Hello" variable=say_hello value=true default=false
+optparse.define short=c long=country desc="The event country" variable=country list="USA Canada Japan Brasil England"
+optparse.define short=y long=year desc="The event year" variable=year required=true
 
-# Compare options defined as required with options enter by user to obtain missing options
-missing_options=$( tr ' ' '\n' <<< "$required_short_options" | sort | comm -32 - /tmp/options_entered | tr '\n' ' ' )
+# BASH_START #
 
-if [ -n "$missing_options" ]; then
-   echo "Missing required option: $missing_options"
-   usage;
-   exit 1;
-else
+# Generate optparse
+source $( optparse.build )
 
-    # Display event information
-    if [[ "$say_hello" == "true" ]]; then
-        salute="Hello!!! "
-    fi
-	echo $salute "The $name event will be in $country in $year."
-    exit 0
+# Display event information
+if [[ "$say_hello" == "true" ]]; then
+    salute="Hello!!! "
 fi
-
-
-
-	
+echo $salute "The $name event will be in $country in $year."

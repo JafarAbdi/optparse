@@ -1,35 +1,39 @@
 #!/usr/bin/env bash
 
-# Source the sample_event_optparse file ---------------------------------------------------
-source wget_dir.sh_optparse
+# Source the optparse.bash file ---------------------------------------------------
+source $OPT_PARSE_DIR/optparse.bash
+
+# Define options
+optparse.define short=r long=recursive desc="Turn on recursive retrieving." variable=recursive value=true default=false required=true
+optparse.define short=c long=continue desc="Resume getting a partially-downloaded file." variable=continue value=true default=false
+optparse.define short=o long=no-directories desc="Do not preserve directory hierarchy" variable=no_dirs value=true default=false
+optparse.define short=h long=no-host-directories desc="Disable generation of host-prefixed directories" variable=no_host_dirs value=true default=false
+optparse.define short=n long=no-parent desc="Do not ever ascend to the parent directory" variable=no_parent value=true default=false required=true
+optparse.define short=x long=directory-prefix desc="Destination directory to save all files" variable=directory file=true required=true
+optparse.define short=d long=progress desc="Progress indicator you wish to use." variable=progress list="bar dot"
+optparse.define short=U long=user-agent desc="Identify as agent-string to the HTTP server." variable=agent list="Mozilla"
+optparse.define short=i long=cut-dirs desc="Ignore number remote directory components." variable=ignore_dirs
+optparse.define short=u long=user desc="User to use" variable=user
+optparse.define short=p long=password desc="User password." variable=password
+
+# BASH_START #
+
+# Generate optparse and autocompletion scripts
+source $( optparse.build )
+
 
 # Command
 cmd="wget"
-
-# Take options enter by user
-tr ' ' '\n' <<< "$@" | grep "\-" | sed -e 's/=.*//g' | sort > /tmp/options_entered
-
-# Compare options defined as required with options enter by user to obtain missing options
-missing_options=$( tr ' ' '\n' <<< "$required_short_options" | sort | comm -32 - /tmp/options_entered | tr '\n' ' ' )
-
-if [ -n "$missing_options" ]; then
-   echo "Missing required option: $missing_options"
-   usage;
-   exit 1;
-else
-    # Add options and parameters to command
-    for option in "$@"
-    do
-        if [ -z "${hash_options[$option]}" ]; then
-            cmd="$cmd $option"
-        else
-            cmd="$cmd ${hash_options[$option]}"
-        fi
-    done
-    # Execute command
-    echo "Executing command: "
-    echo "$cmd"
-    eval "$cmd"
-    exit 0
-fi
-
+# Add options and parameters to command
+for option in "$@"
+do
+    if [ -z "${hash_options[$option]}" ]; then
+        cmd="$cmd $option"
+    else
+        cmd="$cmd ${hash_options[$option]}"
+    fi
+done
+# Execute command
+echo "Executing command: "
+echo "$cmd"
+eval "$cmd"
